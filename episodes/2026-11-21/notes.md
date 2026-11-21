@@ -1,18 +1,25 @@
-# #001 AIは本当にリーマン予想を解いたのか（2026-11-21）
+# #001 コンパイルが通ったら、数学の証明は終わるのか？（2026-11-21）
 
-数学者レヴェント・アルポゲ氏が「Claudeと一緒に一般化リーマン予想を証明した」と発表しました（2026-11-20）。公開されたのは1,700万行を超えるLeanの証明だけです。リーマン予想とは何か、コンピューター科学との関係、Leanでの検証の仕組みと落とし穴、各方面の反応を深掘りします。
+「プログラムを書くこと」と「数学の証明を書くこと」は、文字通り同じ作業だった——。命題は型、証明はプログラム（カリー・ハワード対応）から、数学的帰納法と再帰の関係、定理証明支援系 Lean の小さなカーネル、sorry や公理という抜け道、仕様の書き間違いという最後の落とし穴、AIが数学を最初に攻略した理由、seL4 や CompCert などのソフトウェア検証までを掘り下げます。題材は、Lean で1,700万行を超える一般化リーマン予想の証明が発表された件（収録時点では検証中の主張）。
 
-※ 収録時点では主張の段階で、検証中です。確定した事実ではありません。
-※ この台本はAI（Claude）の支援で作成しています。話題の当事者にClaude（Anthropic）が含まれる点にご留意ください。
+※ この台本はAI（Claude）の支援で作成しています。題材の当事者にClaude（Anthropic）が含まれる点にご留意ください。
+※ イメージをつかむため、厳密さを捨てて単純化して説明しています。
 
-## 出典
-- Levent Alpöge「remark」（本人の声明文）: https://alpo.ge/remark.pdf
-- Terence Tao「Unforced Euler singularity, unforced Navier-Stokes singularity, and the Generalized Riemann Hypothesis」: https://terrytao.wordpress.com/2026/11/20/unforced-euler-singularity-unforced-navier-stokes-singularity-and-the-generalized-riemann-hypothesis/
-- Scott Aaronson「The stochastic parrots have apparently proved the Riemann Hypothesis」: https://scottaaronson.blog/?p=10344
-- Ravi Vakil「Hurried announcement: Alessandro Masullo GRH」: https://math216.wordpress.com/2026/11/20/hurried-announcement-alessandro-masullo-grh/
-- Fernando Borretti「Re: Riemann」: https://borretti.me/article/re-riemann
-- Hacker News の議論: https://news.ycombinator.com/
+## 出典・参考
+- Lean: https://lean-lang.org/
+- Mathlib: https://github.com/leanprover-community/mathlib4
+- Liquid Tensor Experiment（Peter Scholze の挑戦）: https://xenaproject.wordpress.com/2020/12/05/liquid-tensor-experiment/
+- 四色定理の形式証明（Georges Gonthier, 2005/2008）: https://www.ams.org/notices/200811/tx081101382p.pdf
+- Flyspeck（ケプラー予想の形式証明, 2014）: https://github.com/flyspeck/flyspeck
+- seL4: https://sel4.systems/
+- CompCert: https://compcert.org/
+- Yang et al.「Finding and Understanding Bugs in C Compilers」(PLDI 2011): https://users.cs.utah.edu/~regehr/papers/pldi11-preprint.pdf
+- AlphaProof（2024年の国際数学オリンピック）: https://deepmind.google/discover/blog/ai-solves-imo-problems-at-silver-medal-level/
+- Levent Alpöge「remark」: https://alpo.ge/remark.pdf
+- Terence Tao のブログ（2026-11-20）: https://terrytao.wordpress.com/2026/11/20/unforced-euler-singularity-unforced-navier-stokes-singularity-and-the-generalized-riemann-hypothesis/
+- Scott Aaronson のブログ（2026-11-20）: https://scottaaronson.blog/?p=10344
 
 ## クレジット
 - 音声合成: AivisSpeech
-- 声: 阿井田 茂（CV：古山キリヲ）、fumifumi（制作 黒神 / 声 サガワフミヤ）
+- 解説（タカミ）: 阿井田 茂（CV：古山キリヲ）
+- 聞き手（ユウ）: M2（Style-Bert-VITS2 付属モデル / CC BY-SA 4.0）

@@ -3,3 +3,4 @@ work/
 *.mp3
 __pycache__/
 .DS_Store
+.research/

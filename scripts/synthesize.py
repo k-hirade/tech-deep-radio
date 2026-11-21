@@ -15,8 +15,8 @@ ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 
 # 話者ごとの声と話し方（AivisSpeech Engine のスタイルID）
 VOICES = {
-    "T": {"style_id": 1310138977, "speed": 1.05, "pitch": 0.0},  # 解説: 阿井田 茂 (Calm)
-    "Y": {"style_id": 606865152, "speed": 1.08, "pitch": 0.0},   # 聞き手: fumifumi (ノーマル)
+    "T": {"style_id": 1310138977, "speed": 1.0, "pitch": 0.0},  # 解説: 阿井田 茂 (Calm)
+    "Y": {"style_id": 1368642336, "speed": 1.02, "pitch": 0.0},  # 聞き手: M2 (ノーマル)
 }
 PAUSE_SAME = 0.25   # 同じ話者が続くときの間（秒）
 PAUSE_SWITCH = 0.45  # 話者が交代するときの間（秒）
@@ -93,8 +93,8 @@ def main():
             parts.append(pause_same if prev == speaker else pause_switch)
         parts.append(wav)
         prev = speaker
-        print(f"\r{i + 1}/{len(lines)}", end="", flush=True)
-    print()
+        if (i + 1) % 50 == 0:
+            print(f"{i + 1}/{len(lines)}", flush=True)
 
     list_path = os.path.join(work, "concat.txt")
     with open(list_path, "w") as f:

@@ -34,7 +34,8 @@ python3 scripts/synthesize.py episodes/2026-11-21
 Pages は使わず、R2 バケット `fukabori-radio` に置いて `podcast.hiradekeishi.com` で公開している（無料枠: 保存10GB、転送量は無料）。
 
 - 購読用の URL: **https://podcast.hiradekeishi.com/feed.xml**
-- バケットの中身: `feed.xml` / `cover.jpg` / `episodes/<日付>.mp3`
+- トップページ: https://podcast.hiradekeishi.com/ （`index.html`。R2 は `/` に index.html を返さないので、ダッシュボードの Rules → URL Rewrite Rule で `podcast.hiradekeishi.com` の `/` を `/index.html` に書き換えている。手で設定したもの）
+- バケットの中身: `index.html` / `feed.xml` / `cover.jpg` / `episodes/<日付>.mp3`
 - `scripts/publish.py`: `episodes/*/notes.md` と mp3 から RSS を作り、まだ上げていない mp3 とカバー、RSS を wrangler で上げる。`daily.py` の最後で呼ばれる
 - 番組名・説明は `config/podcast.json`
 - wrangler は `npx wrangler@4 login` でログインした状態を使う（トークンは自動で更新される）

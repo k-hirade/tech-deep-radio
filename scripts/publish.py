@@ -114,6 +114,76 @@ def build_feed(cfg, eps):
 """
 
 
+PAGE_CSS = """
+:root{--bg:#f7f5f0;--card:#fff;--ink:#1b2a41;--sub:#5b6475;--line:#e4e0d6;--accent:#c98a12;--chip:#f1ece0}
+@media (prefers-color-scheme:dark){:root{--bg:#121a26;--card:#1b2536;--ink:#e8ecf2;--sub:#9aa5b8;--line:#2b3850;--accent:#f5b83d;--chip:#243049}}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.75 "Hiragino Sans","Noto Sans JP","Yu Gothic UI",system-ui,sans-serif}
+main{max-width:760px;margin:0 auto;padding:32px 16px 64px}
+header{display:flex;gap:20px;align-items:center;margin-bottom:24px}
+header img{width:120px;height:120px;border-radius:14px;flex:none}
+h1{font-size:28px;line-height:1.3;margin:0 0 6px}
+.lead{color:var(--sub);margin:0;font-size:15px}
+.subscribe{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px 18px;margin-bottom:32px}
+.subscribe h2{font-size:15px;margin:0 0 8px}
+.feed{display:flex;gap:8px;flex-wrap:wrap}
+.feed code{flex:1 1 260px;background:var(--chip);border-radius:8px;padding:8px 10px;font-size:14px;overflow-wrap:anywhere}
+.feed button{border:0;border-radius:8px;padding:8px 14px;background:var(--accent);color:#1b2a41;font-weight:700;cursor:pointer}
+.subscribe p{margin:8px 0 0;font-size:13px;color:var(--sub)}
+article{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;margin-bottom:16px}
+.meta{font-size:13px;color:var(--sub)}
+article h3{font-size:19px;line-height:1.45;margin:2px 0 10px}
+audio{width:100%;margin:4px 0 8px}
+article p{margin:0 0 8px;font-size:15px}
+details{font-size:14px;color:var(--sub)}
+details summary{cursor:pointer;color:var(--accent);font-weight:600}
+details h3{font-size:14px;margin:12px 0 4px;color:var(--ink)}
+details ul{padding-left:20px;margin:4px 0}
+details a{color:inherit;overflow-wrap:anywhere}
+footer{margin-top:32px;font-size:13px;color:var(--sub)}
+@media (max-width:520px){header{flex-direction:column;align-items:flex-start}header img{width:96px;height:96px}h1{font-size:24px}}
+"""
+
+
+def build_index(cfg, eps):
+    base = cfg["base_url"].rstrip("/")
+    e = html.escape
+    cards = []
+    for ep in reversed(eps):
+        sec = duration(ep["mp3"])
+        body = md_to_html(ep["notes"])
+        lead, _, rest = body.partition("\n")
+        cards.append(f"""<article>
+  <div class="meta">{ep["date"]} ・ {sec // 60}分</div>
+  <h3>{e(ep["title"])}</h3>
+  <audio controls preload="none" src="{base}/{ep["key"]}"></audio>
+  {lead}
+  <details><summary>注記・出典・クレジット</summary>{rest}</details>
+</article>""")
+    return f"""<!doctype html>
+<html lang="ja"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>{e(cfg["title"])}</title>
+<meta name="description" content="{e(cfg["description"])}">
+<link rel="alternate" type="application/rss+xml" title="{e(cfg["title"])}" href="{base}/feed.xml">
+<link rel="icon" href="{base}/cover.jpg">
+<meta property="og:title" content="{e(cfg["title"])}"><meta property="og:image" content="{base}/cover.jpg">
+<style>{PAGE_CSS}</style>
+</head><body><main>
+<header><img src="{base}/cover.jpg" alt=""><div><h1>{e(cfg["title"])}</h1><p class="lead">{e(cfg["description"])}</p></div></header>
+<section class="subscribe"><h2>ポッドキャストアプリで購読</h2>
+<div class="feed"><code id="feed">{base}/feed.xml</code><button type="button" id="copy">コピー</button></div>
+<p>Apple Podcasts は「ライブラリ → … → URLで番組をフォロー」、Overcast や Pocket Casts は「URLを追加」に貼り付けてください。</p></section>
+{chr(10).join(cards)}
+<footer>音声合成: AivisSpeech ・ 台本は AI（Claude）の支援で作成しています。</footer>
+</main>
+<script>
+document.getElementById("copy").onclick=async e=>{{try{{await navigator.clipboard.writeText(document.getElementById("feed").textContent);e.target.textContent="コピーしました"}}catch(_){{}}}};
+</script>
+</body></html>
+"""
+
+
 def make_cover(cfg, path):
     """1400x1400 の単色カバー（番組名を文字で置くだけ）。"""
     title = cfg["title"]
@@ -142,6 +212,9 @@ def main():
     feed = os.path.join(out_dir, "feed.xml")
     with open(feed, "w", encoding="utf-8") as f:
         f.write(build_feed(cfg, eps))
+    index = os.path.join(out_dir, "index.html")
+    with open(index, "w", encoding="utf-8") as f:
+        f.write(build_index(cfg, eps))
     cover = os.path.join(out_dir, "cover.jpg")
     if not os.path.exists(cover):
         make_cover(cfg, cover)
@@ -164,6 +237,7 @@ def main():
         put(cfg, "cover.jpg", cover, "image/jpeg", "public, max-age=86400")
         state["cover.jpg"] = True
     put(cfg, "feed.xml", feed, "application/rss+xml; charset=utf-8", "public, max-age=300")
+    put(cfg, "index.html", index, "text/html; charset=utf-8", "public, max-age=300")
     with open(STATE, "w") as f:
         json.dump(state, f, indent=1)
     print(f"{cfg['base_url']}/feed.xml")

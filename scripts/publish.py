@@ -75,12 +75,15 @@ def episodes():
         mp3 = os.path.join(ep_dir, "episode.mp3")
         if not os.path.exists(mp3):
             continue
-        date = os.path.basename(ep_dir)
+        ep_id = os.path.basename(ep_dir)  # 2026-11-22 / 同じ日の2本目は 2026-11-22-2
+        date = ep_id[:10]
+        slot = int(ep_id[11:] or 1)
         with open(notes, encoding="utf-8") as f:
             text = f.read()
         title = text.splitlines()[0].removeprefix("# ").strip()
         title = re.sub(r"（\d{4}-\d{2}-\d{2}）$", "", title)
-        eps.append({"date": date, "title": title, "notes": text, "mp3": mp3, "key": f"episodes/{date}.mp3"})
+        eps.append({"id": ep_id, "date": date, "slot": slot, "title": title, "notes": text, "mp3": mp3,
+                    "key": f"episodes/{ep_id}.mp3"})
     return eps
 
 
@@ -90,13 +93,13 @@ def build_feed(cfg, eps):
     now = email.utils.format_datetime(datetime.datetime.now(JST))
     items = []
     for ep in reversed(eps):
-        pub = datetime.datetime.fromisoformat(ep["date"]).replace(hour=5, tzinfo=JST)
+        pub = datetime.datetime.fromisoformat(ep["date"]).replace(hour=4 + ep["slot"], tzinfo=JST)  # 2本目は6時、3本目は7時
         sec = duration(ep["mp3"])
         items.append(f"""    <item>
       <title>{e(ep["title"])}</title>
       <description><![CDATA[{md_to_html(ep["notes"]).replace("]]>", "]]&gt;")}]]></description>
       <enclosure url="{base}/{ep["key"]}" length="{os.path.getsize(ep["mp3"])}" type="audio/mpeg"/>
-      <guid isPermaLink="false">fukabori-{ep["date"]}</guid>
+      <guid isPermaLink="false">fukabori-{ep["id"]}</guid>
       <pubDate>{email.utils.format_datetime(pub)}</pubDate>
       <itunes:duration>{sec // 3600}:{sec % 3600 // 60:02d}:{sec % 60:02d}</itunes:duration>
       <itunes:explicit>false</itunes:explicit>

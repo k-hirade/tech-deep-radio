@@ -4,19 +4,27 @@
 R2 のバケットは podcast.hiradekeishi.com で公開している。中身:
   feed.xml / cover.jpg / episodes/<日付>.mp3
 アップロード済みの mp3 は .publish-state.json に記録し、二度は上げない。
+アップロードは wrangler のログインで行う。~/.config/fukabori/r2.env にバケット限定の R2 キーを
+置けば（scripts/setup_credentials.sh）、そちらを使う。
 """
 import argparse
 import datetime
 import email.utils
 import glob
+import hashlib
+import hmac
 import html
 import json
 import os
 import re
 import subprocess
 import sys
+import urllib.error
+import urllib.parse
+import urllib.request
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+R2_ENV = os.path.expanduser("~/.config/fukabori/r2.env")
 STATE = os.path.join(ROOT, ".publish-state.json")
 JST = datetime.timezone(datetime.timedelta(hours=9))
 FONT = os.path.expanduser("~/Library/Fonts/NotoSansCJKjp-Bold.otf")
@@ -193,11 +201,67 @@ def make_cover(cfg, path):
                     "-frames:v", "1", "-vf", vf, "-q:v", "3", path], check=True)
 
 
+def r2_credentials():
+    """~/.config/fukabori/r2.env（このバケットだけ読み書きできる R2 の API トークン）を読む。"""
+    creds = {}
+    with open(R2_ENV) as f:
+        for line in f:
+            if "=" in line:
+                k, v = line.strip().split("=", 1)
+                creds[k] = v
+    missing = {"R2_ACCOUNT_ID", "R2_ACCESS_KEY_ID", "R2_SECRET_ACCESS_KEY"} - creds.keys()
+    if missing:
+        sys.exit(f"{R2_ENV} に {', '.join(sorted(missing))} がない（scripts/setup_credentials.sh で設定）")
+    return creds
+
+
+def has_r2_keys():
+    try:
+        with open(R2_ENV) as f:
+            return "R2_SECRET_ACCESS_KEY=" in f.read()
+    except OSError:
+        return False
+
+
 def put(cfg, key, path, content_type, cache):
-    subprocess.run(["npx", "--yes", "wrangler@4", "r2", "object", "put", f"{cfg['bucket']}/{key}",
-                    "--file", path, "--content-type", content_type, "--cache-control", cache, "--remote"],
-                   check=True, cwd="/tmp", capture_output=True, text=True)
+    """R2 のキー（r2.env）があれば S3 互換 API で、なければ wrangler のログインで上げる。"""
+    if has_r2_keys():
+        put_s3(cfg, key, path, content_type, cache)
+    else:
+        subprocess.run(["npx", "--yes", "wrangler@4", "r2", "object", "put", f"{cfg['bucket']}/{key}",
+                        "--file", path, "--content-type", content_type, "--cache-control", cache, "--remote"],
+                       check=True, cwd="/tmp", capture_output=True, text=True)
     print(f"uploaded {key}", flush=True)
+
+
+def put_s3(cfg, key, path, content_type, cache):
+    """R2 の S3 互換 API に PUT する（AWS 署名 V4、標準ライブラリだけ）。"""
+    c = r2_credentials()
+    host = f"{c['R2_ACCOUNT_ID']}.r2.cloudflarestorage.com"
+    uri = "/" + urllib.parse.quote(f"{cfg['bucket']}/{key}")
+    with open(path, "rb") as f:
+        body = f.read()
+    now = datetime.datetime.now(datetime.timezone.utc)
+    amz_date, day = now.strftime("%Y%m%dT%H%M%SZ"), now.strftime("%Y%m%d")
+    payload_hash = hashlib.sha256(body).hexdigest()
+    headers = {"cache-control": cache, "content-type": content_type, "host": host,
+               "x-amz-content-sha256": payload_hash, "x-amz-date": amz_date}
+    signed = ";".join(sorted(headers))
+    canonical = "\n".join(["PUT", uri, "", "".join(f"{k}:{headers[k]}\n" for k in sorted(headers)), signed, payload_hash])
+    scope = f"{day}/auto/s3/aws4_request"
+    to_sign = "\n".join(["AWS4-HMAC-SHA256", amz_date, scope, hashlib.sha256(canonical.encode()).hexdigest()])
+    k = ("AWS4" + c["R2_SECRET_ACCESS_KEY"]).encode()
+    for part in (day, "auto", "s3", "aws4_request"):
+        k = hmac.new(k, part.encode(), hashlib.sha256).digest()
+    sig = hmac.new(k, to_sign.encode(), hashlib.sha256).hexdigest()
+    headers["authorization"] = (f"AWS4-HMAC-SHA256 Credential={c['R2_ACCESS_KEY_ID']}/{scope}, "
+                                f"SignedHeaders={signed}, Signature={sig}")
+    del headers["host"]
+    req = urllib.request.Request(f"https://{host}{uri}", data=body, method="PUT", headers=headers)
+    try:
+        urllib.request.urlopen(req, timeout=300).read()
+    except urllib.error.HTTPError as e:
+        sys.exit(f"R2 へのアップロード失敗 {key}: {e.code} {e.read()[:300]!r}")
 
 
 def main():

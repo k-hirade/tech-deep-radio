@@ -6,8 +6,8 @@
 
 ## 構成（予定）
 1. 05:00 Claude Code のルーティン: トピック選定 → 調査 → 台本（`episodes/<日付>/script_*.txt`）と概要欄（`notes.md`）を作ってコミット
-2. GitHub Actions: AivisSpeech Engine で音声合成 → mp3
-3. Cloudflare Pages（`podcast.hiradekeishi.com` 予定）に mp3 と RSS を公開
+2. WSL の GPU で AivisSpeech Engine による音声合成 → mp3
+3. Cloudflare R2（`podcast.hiradekeishi.com`）に mp3 と RSS を公開
 4. スマホのポッドキャストアプリで RSS を購読し、自動ダウンロードしてオフラインで聴く
 
 ## 台本の書式
@@ -30,8 +30,18 @@ python3 scripts/synthesize.py episodes/2026-11-21
   - `fukabori-daily.timer`: 毎朝 05:00 に `fukabori-daily.service` を動かす。PC が止まっていて逃した場合は、次に起動したときに動く
 - `scripts/daily.py`: `prompts/daily.md` を使って `claude -p` に台本を書かせる → 書式と字数を確かめる → 音声を作る → コミットして push。止まっても、再実行すれば続きから進む。ログは `logs/<日付>.log`。
 
+## 公開（Cloudflare R2）
+Pages は使わず、R2 バケット `fukabori-radio` に置いて `podcast.hiradekeishi.com` で公開している（無料枠: 保存10GB、転送量は無料）。
+
+- 購読用の URL: **https://podcast.hiradekeishi.com/feed.xml**
+- バケットの中身: `feed.xml` / `cover.jpg` / `episodes/<日付>.mp3`
+- `scripts/publish.py`: `episodes/*/notes.md` と mp3 から RSS を作り、まだ上げていない mp3 とカバー、RSS を wrangler で上げる。`daily.py` の最後で呼ばれる
+- 番組名・説明は `config/podcast.json`
+- wrangler は `npx wrangler@4 login` でログインした状態を使う（トークンは自動で更新される）
+
 ```bash
-python3 scripts/daily.py --date 2026-11-22 --no-push   # 手で1回分を作る
+python3 scripts/publish.py --dry-run                    # work/feed.xml を作るだけ
+python3 scripts/daily.py --date 2026-11-22 --no-push --no-publish   # 手で1回分を作る
 systemctl --user list-timers fukabori-daily.timer      # 次に動く時刻
 journalctl --user -u aivisspeech -f                    # エンジンのログ
 ```

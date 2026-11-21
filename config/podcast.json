@@ -1,0 +1,9 @@
+{
+  "title": "ふかぼりテックラジオ",
+  "description": "その日いちばん話題になった技術トピックを1つ選び、ニュースではなく「技術そのもの」を、解説役のタカミと聞き手のユウの掛け合いで約40分深掘りします。毎朝更新。台本はAI（Claude）の支援で作成し、音声は AivisSpeech で合成しています。",
+  "author": "ふかぼりテックラジオ",
+  "language": "ja",
+  "category": "Technology",
+  "base_url": "https://podcast.hiradekeishi.com",
+  "bucket": "fukabori-radio"
+}

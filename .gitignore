@@ -6,3 +6,4 @@ __pycache__/
 .research/
 .daily.lock
 logs/
+.publish-state.json

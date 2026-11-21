@@ -113,6 +113,7 @@ def main():
     ap = argparse.ArgumentParser()
     ap.add_argument("--date", default=datetime.date.today().isoformat())
     ap.add_argument("--no-push", action="store_true")
+    ap.add_argument("--no-publish", action="store_true", help="R2 に上げない")
     args = ap.parse_args()
     date = args.date
     ep_dir = os.path.join(ROOT, "episodes", date)
@@ -151,6 +152,9 @@ def main():
     if not args.no_push:
         git("push")
         log("push した")
+    if not args.no_publish:
+        subprocess.run([sys.executable, os.path.join(ROOT, "scripts", "publish.py")], check=True)
+        log("R2 に公開した")
     log(f"完了: {os.path.join(ep_dir, 'episode.mp3')}")
 
 

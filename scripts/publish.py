@@ -86,7 +86,7 @@ def build_feed(cfg, eps):
         sec = duration(ep["mp3"])
         items.append(f"""    <item>
       <title>{e(ep["title"])}</title>
-      <description><![CDATA[{md_to_html(ep["notes"])}]]></description>
+      <description><![CDATA[{md_to_html(ep["notes"]).replace("]]>", "]]&gt;")}]]></description>
       <enclosure url="{base}/{ep["key"]}" length="{os.path.getsize(ep["mp3"])}" type="audio/mpeg"/>
       <guid isPermaLink="false">fukabori-{ep["date"]}</guid>
       <pubDate>{email.utils.format_datetime(pub)}</pubDate>

@@ -4,3 +4,5 @@ work/
 __pycache__/
 .DS_Store
 .research/
+.daily.lock
+logs/

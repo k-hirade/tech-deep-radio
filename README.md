@@ -20,6 +20,22 @@ python3 scripts/synthesize.py episodes/2026-11-21
 ```
 英単語の読み方は `config/readings.json` に足していく。
 
+## WSL での毎朝の自動実行
+音声合成は GitHub Actions ではなく、WSL の GPU（RTX 5060）で行う。40分の回が約3分でできる。
+
+- エンジン: `~/opt/aivisspeech/`（Linux 版 1.2.0）。CUDA 12 / cuDNN 9 は同じフォルダの venv に pip で入れ、`start.sh` が `LD_LIBRARY_PATH` に通す（sudo 不要）。
+- 声モデル（`.aivmx`）は `~/.local/share/AivisSpeech-Engine/Models/` に置く。リポジトリは公開なのでコミットしない。
+- systemd ユーザーユニット（`~/.config/systemd/user/`）:
+  - `aivisspeech.service`: エンジンを常に起動しておく
+  - `fukabori-daily.timer`: 毎朝 05:00 に `fukabori-daily.service` を動かす。PC が止まっていて逃した場合は、次に起動したときに動く
+- `scripts/daily.py`: `prompts/daily.md` を使って `claude -p` に台本を書かせる → 書式と字数を確かめる → 音声を作る → コミットして push。止まっても、再実行すれば続きから進む。ログは `logs/<日付>.log`。
+
+```bash
+python3 scripts/daily.py --date 2026-11-22 --no-push   # 手で1回分を作る
+systemctl --user list-timers fukabori-daily.timer      # 次に動く時刻
+journalctl --user -u aivisspeech -f                    # エンジンのログ
+```
+
 ## 声とクレジット
 - 解説: 阿井田 茂（Calm）CV：古山キリヲ / ACML 1.0
 - 聞き手: M2（Style-Bert-VITS2 付属の男性モデル）/ CC BY-SA 4.0

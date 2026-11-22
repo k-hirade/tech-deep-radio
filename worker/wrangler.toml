@@ -1,0 +1,16 @@
+# トップページ用の Worker。podcast.hiradekeishi.com の全リクエストを受け、
+#   /（?… 付きも）→ R2 の index.html を返す / /index.html → / に 301 / それ以外 → そのまま R2 へ素通し
+# ルートの指定に ? を含められず、"/" だけだと ?… 付きにマッチしないため、全体（/*）で受ける。
+name = "fukabori-top"
+main = "index.js"
+compatibility_date = "2025-06-01"
+workers_dev = false
+preview_urls = false
+
+routes = [
+  { pattern = "podcast.hiradekeishi.com/*", zone_name = "hiradekeishi.com" },
+]
+
+[[r2_buckets]]
+binding = "BUCKET"
+bucket_name = "fukabori-radio"

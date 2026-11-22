@@ -84,7 +84,7 @@ def episodes():
         title = re.sub(r"（\d{4}-\d{2}-\d{2}）$", "", title)
         eps.append({"id": ep_id, "date": date, "slot": slot, "title": title, "notes": text, "mp3": mp3,
                     "key": f"episodes/{ep_id}.mp3"})
-    return eps
+    return sorted(eps, key=lambda e: (e["date"], e["slot"]))
 
 
 def build_feed(cfg, eps):

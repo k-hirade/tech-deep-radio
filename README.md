@@ -30,6 +30,9 @@ python3 scripts/synthesize.py episodes/2026-11-21
   - `fukabori-daily.timer`: 毎朝 05:00 に `fukabori-daily.service` を動かす。PC が止まっていて逃した場合は、次に起動したときに動く
 - `scripts/daily.py`: `prompts/daily.md` を使って `claude -p` に台本を書かせる → 書式と字数を確かめる → 音声を作る → コミットして push。止まっても、再実行すれば続きから進む。ログは `logs/<日付>.log`。
 
+## テーマの指定
+`requests/<日付>.md` にテーマを書いておくと、その日の回は話題選びをせずにそのテーマで作る（詳しくは `requests/README.md`）。GitHub の画面やスマホからファイルを作っても、朝5時の `git pull` で反映される。同じ日の2本目は `2026-11-22-2` のように番号付きの ID で作る（`python3 scripts/daily.py --date 2026-11-22-2`）。
+
 ## 公開（Cloudflare R2）
 Pages は使わず、R2 バケット `fukabori-radio` に置いて `podcast.hiradekeishi.com` で公開している（無料枠: 保存10GB、転送量は無料）。
 

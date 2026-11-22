@@ -268,6 +268,7 @@ def build_index(cfg, eps, md_to_html, duration):
 <title>{e(cfg["title"])}</title>
 <meta name="description" content="{e(cfg["description"])}">
 <meta name="theme-color" content="#16223a">
+<link rel="canonical" href="{base}/"><meta property="og:url" content="{base}/">
 <link rel="alternate" type="application/rss+xml" title="{e(cfg["title"])}" href="{base}/feed.xml">
 <link rel="icon" href="{base}/cover.jpg"><link rel="apple-touch-icon" href="{base}/cover.jpg">
 <meta property="og:title" content="{e(cfg["title"])}"><meta property="og:description" content="{e(cfg["description"])}">
